@@ -110,6 +110,42 @@ void simpleTriangleUtil(unsigned int& VBO, unsigned int& VAO)
 	glBindVertexArray(0);
 }
 
+void indexedRectangleUtil(unsigned int& VBO, unsigned int& VAO, unsigned int& EBO)
+{
+	// vertex data
+	float vertices[] = {
+		0.5f, 0.5f, 0.0f,	// top right
+		0.5f, -0.5f, 0.0f,	// bottom right
+		-0.5f, -0.5f, 0.0f, // bottom left
+		-0.5f, 0.5f, 0.0f	// top left
+	};
+	unsigned int indices[] = {
+		0, 1, 3,	// first triangle
+		1, 2, 3		// second triangle
+	};
+	
+	// create VBO, VAO and EBO
+	glGenBuffers(1, &VBO);
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &EBO);
+
+	// bind the VAO, then bind and set VBO & EBO
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// linking vertex attributes
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// unbind VAO and then VBO & EBO
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
 int main()
 {
 	// setting hints before window creation
@@ -143,8 +179,8 @@ int main()
 	shaderProgramCreation(shaderProgram);
 
 	// create VBO and VAO
-	unsigned int VBO, VAO;
-	simpleTriangleUtil(VBO, VAO);
+	unsigned int VBO, VAO, EBO;
+	indexedRectangleUtil(VBO, VAO, EBO);
 
 	// render loop
 	while (!glfwWindowShouldClose(window))
@@ -155,14 +191,21 @@ int main()
 		// rendering commands here
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-
+	/*
 		// draw triangle
 		// activate shader program
 		glUseProgram(shaderProgram);
 		// bind the necessary VAO
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
-		
+	*/
+		// draw rectangle
+		// activate shader program
+		glUseProgram(shaderProgram);
+		// bind the necessary VAO
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 		// check and call events and swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -170,6 +213,7 @@ int main()
 
 	// de-allocate all resources
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &EBO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteProgram(shaderProgram);
 
