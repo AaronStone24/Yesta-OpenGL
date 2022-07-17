@@ -1,6 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <vector>
+#include "Triangle.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -86,12 +88,31 @@ void shaderProgramCreation(unsigned int& shaderProgram)
 void simpleTriangleUtil(unsigned int& VBO, unsigned int& VAO)
 {
 	// vertex data
-	float vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f, 0.5f, 0.0f
-	};
+	std::vector<std::unique_ptr<Triangle>> triangles;
+	triangles.push_back(std::make_unique<Triangle>(Point(-0.5f, 0, 0), 0.5f));
+	triangles.push_back(std::make_unique<Triangle>(Point(0.5f, 0, 0), 0.5f));
+	float* vertices = new float[triangles.size() * 3 * 3];
+	unsigned int i = 0;
+	for (const auto& triangle : triangles)
+	{
+		const auto v = triangle->getVertices();
+		for (const auto& p : v)
+		{
+			vertices[i++] = p.x;
+			vertices[i++] = p.y;
+			vertices[i++] = p.z;
+		}
+	}
+	
+	for (unsigned int i = 0; i < 18; i++) {
+		if (i % 9 == 0)
+			std::cout << "\nTriangle " << i / 9 << ": ";
+		if (i % 3 == 0)
+			std::cout << "\n";
+		std::cout << vertices[i] << " ";
+	}
 
+	
 	// create VBO and VAO
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO);
@@ -99,7 +120,7 @@ void simpleTriangleUtil(unsigned int& VBO, unsigned int& VAO)
 	// bind the VAO, then bind and set VBO
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, static_cast<unsigned long long>(3) * 3 * triangles.size() * sizeof(float), vertices, GL_STATIC_DRAW);
 
 	// linking vertex attributes
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -108,6 +129,7 @@ void simpleTriangleUtil(unsigned int& VBO, unsigned int& VAO)
 	// unbind VBO and VAO
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+	delete [] vertices;
 }
 
 void indexedRectangleUtil(unsigned int& VBO, unsigned int& VAO, unsigned int& EBO)
@@ -178,9 +200,12 @@ int main()
 	unsigned int shaderProgram;
 	shaderProgramCreation(shaderProgram);
 
-	// create VBO and VAO
+	// create VBO, VAO and EBO
 	unsigned int VBO, VAO, EBO;
-	indexedRectangleUtil(VBO, VAO, EBO);
+	simpleTriangleUtil(VBO, VAO);
+
+	// wireframe mode
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// render loop
 	while (!glfwWindowShouldClose(window))
@@ -191,20 +216,20 @@ int main()
 		// rendering commands here
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-	/*
+	
 		// draw triangle
 		// activate shader program
 		glUseProgram(shaderProgram);
 		// bind the necessary VAO
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-	*/
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	
 		// draw rectangle
 		// activate shader program
-		glUseProgram(shaderProgram);
+		//glUseProgram(shaderProgram);
 		// bind the necessary VAO
-		glBindVertexArray(VAO);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		//glBindVertexArray(VAO);
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// check and call events and swap buffers
 		glfwSwapBuffers(window);
@@ -213,7 +238,7 @@ int main()
 
 	// de-allocate all resources
 	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &EBO);
+	//glDeleteBuffers(1, &EBO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteProgram(shaderProgram);
 
