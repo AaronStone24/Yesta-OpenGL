@@ -45,9 +45,10 @@ void shaderProgramCreation(unsigned int& shaderProgram)
 	// fragment shader source code
 	const char* fragmentShaderSource = "#version 460 core\n"
 		"out vec4 FragColor;\n"
+		"uniform vec4 ourColor;\n"
 		"void main()\n"
 		"{\n"
-		"FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+		"FragColor = ourColor;\n"
 		"}\0";
 
 	// fragment shader compilation
@@ -91,7 +92,7 @@ void simpleTriangleUtil(unsigned int& VBO, unsigned int& VAO)
 	std::vector<std::unique_ptr<Triangle>> triangles;
 	triangles.push_back(std::make_unique<Triangle>(Point(-0.5f, 0, 0), 0.5f));
 	triangles.push_back(std::make_unique<Triangle>(Point(0.5f, 0, 0), 0.5f));
-	float* vertices = new float[triangles.size() * 3 * 3];
+	float* vertices = new float[triangles.size() * 3 * 3]{0.0f};
 	unsigned int i = 0;
 	for (const auto& triangle : triangles)
 	{
@@ -220,17 +221,27 @@ int main()
 		// draw triangle
 		// activate shader program
 		glUseProgram(shaderProgram);
+
+		// update the uniform variable ourColor
+		float currentTime = glfwGetTime();
+		float green = sinf(currentTime) / 2.0f + 0.5f;
+		int vertexColorLocation = 0;
+		if((vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor")) != -1)
+			glUniform4f(vertexColorLocation, 0.0f, green, 0.0f, 1.0f);
+			
 		// bind the necessary VAO
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	
+		/*
 		// draw rectangle
 		// activate shader program
-		//glUseProgram(shaderProgram);
+		glUseProgram(shaderProgram);
 		// bind the necessary VAO
-		//glBindVertexArray(VAO);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		*/
+		
 		// check and call events and swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
