@@ -20,9 +20,12 @@ void shaderProgramCreation(unsigned int& shaderProgram)
 	// vertex shader source code
 	const char* vertexShaderSource = "#version 460 core\n"
 		"layout (location = 0) in vec3 aPos;\n"
+		"layout (location = 1) in vec3 aColor;\n"
+		"out vec3 ourColor;\n"
 		"void main()\n"
 		"{\n"
 		"gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+		"ourColor = aColor;\n"
 		"}\0";
 
 	// vertex shader compilation
@@ -45,10 +48,10 @@ void shaderProgramCreation(unsigned int& shaderProgram)
 	// fragment shader source code
 	const char* fragmentShaderSource = "#version 460 core\n"
 		"out vec4 FragColor;\n"
-		"uniform vec4 ourColor;\n"
+		"in vec3 ourColor;\n"
 		"void main()\n"
 		"{\n"
-		"FragColor = ourColor;\n"
+		"FragColor = vec4(ourColor, 1.0);\n"
 		"}\0";
 
 	// fragment shader compilation
@@ -92,8 +95,8 @@ void simpleTriangleUtil(unsigned int& VBO, unsigned int& VAO)
 	std::vector<std::unique_ptr<Triangle>> triangles;
 	triangles.push_back(std::make_unique<Triangle>(Point(-0.5f, 0, 0), 0.5f));
 	triangles.push_back(std::make_unique<Triangle>(Point(0.5f, 0, 0), 0.5f));
-	float* vertices = new float[triangles.size() * 3 * 3]{0.0f};
-	unsigned int i = 0;
+	float* vertices = new float[triangles.size() * 3 * 6]{0.0f};
+	unsigned int i = 0, j = 0;
 	for (const auto& triangle : triangles)
 	{
 		const auto v = triangle->getVertices();
@@ -102,13 +105,15 @@ void simpleTriangleUtil(unsigned int& VBO, unsigned int& VAO)
 			vertices[i++] = p.x;
 			vertices[i++] = p.y;
 			vertices[i++] = p.z;
+			vertices[i + (j++ % 3)] = 1.0f;
+			i = i + 3;
 		}
 	}
 	
-	for (unsigned int i = 0; i < 18; i++) {
-		if (i % 9 == 0)
-			std::cout << "\nTriangle " << i / 9 << ": ";
-		if (i % 3 == 0)
+	for (unsigned int i = 0; i < 36; i++) {
+		if (i % 18 == 0)
+			std::cout << "\nTriangle " << i / 18 << ": ";
+		if (i % 6 == 0)
 			std::cout << "\n";
 		std::cout << vertices[i] << " ";
 	}
@@ -121,11 +126,13 @@ void simpleTriangleUtil(unsigned int& VBO, unsigned int& VAO)
 	// bind the VAO, then bind and set VBO
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, static_cast<unsigned long long>(3) * 3 * triangles.size() * sizeof(float), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, static_cast<unsigned long long>(6) * 3 * triangles.size() * sizeof(float), vertices, GL_STATIC_DRAW);
 
 	// linking vertex attributes
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	// unbind VBO and VAO
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -222,13 +229,15 @@ int main()
 		// activate shader program
 		glUseProgram(shaderProgram);
 
+		/*
 		// update the uniform variable ourColor
 		float currentTime = glfwGetTime();
 		float green = sinf(currentTime) / 2.0f + 0.5f;
 		int vertexColorLocation = 0;
 		if((vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor")) != -1)
 			glUniform4f(vertexColorLocation, 0.0f, green, 0.0f, 1.0f);
-			
+		*/
+		
 		// bind the necessary VAO
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
