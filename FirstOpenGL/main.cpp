@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "Triangle.h"
+#include "ShaderUtil.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -205,8 +206,8 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	// shader program creation along with fragment and vertex shaders
-	unsigned int shaderProgram;
-	shaderProgramCreation(shaderProgram);
+	fs::path fShaderPath("./shader.fs"), vShaderPath("./shader.vs");
+	Shader shader(vShaderPath, fShaderPath);
 
 	// create VBO, VAO and EBO
 	unsigned int VBO, VAO, EBO;
@@ -227,7 +228,7 @@ int main()
 	
 		// draw triangle
 		// activate shader program
-		glUseProgram(shaderProgram);
+		shader.use();
 
 		/*
 		// update the uniform variable ourColor
@@ -260,7 +261,7 @@ int main()
 	glDeleteVertexArrays(1, &VAO);
 	//glDeleteBuffers(1, &EBO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteProgram(shaderProgram);
+	shader.destroy();
 
 	// clean/delete all the resources
 	glfwTerminate();
